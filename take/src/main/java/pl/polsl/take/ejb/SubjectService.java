@@ -21,10 +21,18 @@ public class SubjectService {
 
     public void addSubject(SubjectDTO subjectDTO) {
         try {
+            Long count = em.createQuery("SELECT COUNT(s) FROM Subject s WHERE s.name = :name", Long.class)
+                    .setParameter("name", subjectDTO.getName())
+                    .getSingleResult();
+            if (count > 0) {
+                throw new IllegalArgumentException("Subject with name " + subjectDTO.getName() + " already exists.");
+            }
+
             Lecturer lecturer = em.find(Lecturer.class, subjectDTO.getLecturerId());
             if (lecturer == null) {
                 throw new IllegalArgumentException("Lecturer with ID " + subjectDTO.getLecturerId() + " does not exist");
             }
+
             Subject subject = new Subject();
             subject.setName(subjectDTO.getName());
             subject.setLecturer(lecturer);
@@ -34,7 +42,6 @@ public class SubjectService {
             em.merge(lecturer);
         } catch (IllegalArgumentException e) {
             System.err.println("Error: " + e.getMessage());
-
             throw e;
         }
     }
