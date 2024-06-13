@@ -5,12 +5,7 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import pl.polsl.take.dto.SubjectDTO;
 import pl.polsl.take.entity.Lecturer;
-import pl.polsl.take.entity.Question;
 import pl.polsl.take.entity.Subject;
-import pl.polsl.take.entity.Survey;
-
-import java.util.Arrays;
-import java.util.Date;
 import java.util.List;
 
 @Stateless
@@ -25,19 +20,24 @@ public class SubjectService {
 
 
     public void addSubject(SubjectDTO subjectDTO) {
-        Lecturer lecturer = em.find(Lecturer.class, subjectDTO.getLecturerId());
-        if (lecturer == null) {
-            throw new IllegalArgumentException("Lecturer with ID " + subjectDTO.getLecturerId() + " not found");
+        try {
+            Lecturer lecturer = em.find(Lecturer.class, subjectDTO.getLecturerId());
+            if (lecturer == null) {
+                throw new IllegalArgumentException("Lecturer with ID " + subjectDTO.getLecturerId() + " does not exist");
+            }
+            Subject subject = new Subject();
+            subject.setName(subjectDTO.getName());
+            subject.setLecturer(lecturer);
+            em.persist(subject);
+
+            lecturer.getSubjects().add(subject);
+            em.merge(lecturer);
+        } catch (IllegalArgumentException e) {
+            System.err.println("Error: " + e.getMessage());
+
+            throw e;
         }
-        Subject subject = new Subject();
-        subject.setName(subjectDTO.getName());
-        subject.setLecturer(lecturer);
-        em.persist(subject);
-
-
-        lecturer.getSubjects().add(subject);
-        em.merge(lecturer);
     }
-    
+
 
 }

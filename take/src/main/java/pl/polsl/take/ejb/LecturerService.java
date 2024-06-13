@@ -10,6 +10,7 @@ import pl.polsl.take.entity.Lecturer;
 import pl.polsl.take.entity.Question;
 import pl.polsl.take.entity.Survey;
 import pl.polsl.take.entity.Subject;
+import pl.polsl.take.validator.EmailValidator;
 
 import java.util.Arrays;
 import java.util.Date;
@@ -29,20 +30,36 @@ public class LecturerService {
 
 
     public void addLecturer(LecturerDTO lecturerDTO) {
-        Lecturer lecturer = new Lecturer();
-        lecturer.setFirstName(lecturerDTO.getFirstName());
-        lecturer.setLastName(lecturerDTO.getLastName());
-        lecturer.setEmail(lecturerDTO.getEmail());
-        em.persist(lecturer);
+        try {
 
-        if (lecturerDTO.getSubjectIds() != null && !lecturerDTO.getSubjectIds().isEmpty()) {
-            List<Subject> subjects = em.createQuery("SELECT s FROM Subject s WHERE s.id IN :ids", Subject.class)
-                    .setParameter("ids", lecturerDTO.getSubjectIds())
-                    .getResultList();
-            lecturer.setSubjects(new HashSet<>(subjects));
+            EmailValidator.validate(lecturerDTO.getEmail());
+
+            Long count = em.createQuery("SELECT COUNT(l) FROM Lecturer l WHERE l.email = :email", Long.class)
+                    .setParameter("email", lecturerDTO.getEmail())
+                    .getSingleResult();
+            if (count > 0) {
+                throw new IllegalArgumentException("Email " + lecturerDTO.getEmail() + " is already in use.");
+            }
+
+
+            Lecturer lecturer = new Lecturer();
+            lecturer.setFirstName(lecturerDTO.getFirstName());
+            lecturer.setLastName(lecturerDTO.getLastName());
+            lecturer.setEmail(lecturerDTO.getEmail());
+            em.persist(lecturer);
+
+            if (lecturerDTO.getSubjectIds() != null && !lecturerDTO.getSubjectIds().isEmpty()) {
+                List<Subject> subjects = em.createQuery("SELECT s FROM Subject s WHERE s.id IN :ids", Subject.class)
+                        .setParameter("ids", lecturerDTO.getSubjectIds())
+                        .getResultList();
+                lecturer.setSubjects(new HashSet<>(subjects));
+            }
+
+            createSurveyForLecturer(lecturer);
+        } catch (IllegalArgumentException e) {
+            System.err.println("Error: " + e.getMessage());
+            throw e;
         }
-
-        createSurveyForLecturer(lecturer);
     }
 
     private void createSurveyForLecturer(Lecturer lecturer) {

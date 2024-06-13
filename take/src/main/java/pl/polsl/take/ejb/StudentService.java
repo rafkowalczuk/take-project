@@ -6,6 +6,7 @@ import jakarta.persistence.NoResultException;
 import jakarta.persistence.PersistenceContext;
 import pl.polsl.take.dto.StudentSurveyDTO;
 import pl.polsl.take.entity.Student;
+import pl.polsl.take.validator.EmailValidator;
 
 import java.util.List;
 
@@ -30,7 +31,22 @@ public class StudentService {
     }
 
     public void addStudent(Student student) {
-        em.persist(student);
+        try {
+
+            EmailValidator.validate(student.getEmail());
+
+            Long count = em.createQuery("SELECT COUNT(s) FROM Student s WHERE s.email = :email", Long.class)
+                    .setParameter("email", student.getEmail())
+                    .getSingleResult();
+            if (count > 0) {
+                throw new IllegalArgumentException("Email " + student.getEmail() + " is already in use.");
+            }
+
+            em.persist(student);
+        } catch (IllegalArgumentException e) {
+            System.err.println("Error: " + e.getMessage());
+            throw e;
+        }
     }
 
     public Student getStudentByEmail(String email) {
