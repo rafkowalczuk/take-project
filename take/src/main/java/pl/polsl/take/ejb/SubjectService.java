@@ -35,6 +35,8 @@ public class SubjectService {
         em.persist(subject);
 
 
+        lecturer.getSubjects().add(subject);
+        em.merge(lecturer);
     }
     
 
