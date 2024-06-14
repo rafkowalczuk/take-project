@@ -3,10 +3,12 @@ package pl.polsl.take.ejb;
 import jakarta.ejb.Stateless;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
+import pl.polsl.take.dto.SimpleSubjectDTO;
 import pl.polsl.take.dto.SubjectDTO;
 import pl.polsl.take.entity.Lecturer;
 import pl.polsl.take.entity.Subject;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Stateless
 public class SubjectService {
@@ -14,9 +16,13 @@ public class SubjectService {
     @PersistenceContext(unitName = "default")
     private EntityManager em;
 
-    public List<Subject> getAllSubjects() {
-        return em.createQuery("SELECT s FROM Subject s", Subject.class).getResultList();
+    public List<SimpleSubjectDTO> getAllSubjects() {
+        List<Subject> subjects = em.createQuery("SELECT s FROM Subject s", Subject.class).getResultList();
+        return subjects.stream()
+                .map(subject -> new SimpleSubjectDTO(subject.getSubjectId(), subject.getName()))
+                .collect(Collectors.toList());
     }
+
 
 
     public void addSubject(SubjectDTO subjectDTO) {

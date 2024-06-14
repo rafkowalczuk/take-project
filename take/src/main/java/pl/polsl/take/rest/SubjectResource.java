@@ -4,9 +4,10 @@ import jakarta.inject.Inject;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import pl.polsl.take.dto.SimpleSubjectDTO;
 import pl.polsl.take.dto.SubjectDTO;
 import pl.polsl.take.ejb.SubjectService;
-import pl.polsl.take.entity.Subject;
+
 
 import java.util.List;
 
@@ -21,7 +22,7 @@ public class SubjectResource {
 
     @GET
     public Response getAllSubjects() {
-        List<Subject> subjects = subjectService.getAllSubjects();
+        List<SimpleSubjectDTO> subjects = subjectService.getAllSubjects();
         return Response.ok(subjects).build();
     }
 
