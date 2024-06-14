@@ -31,7 +31,6 @@ public class LecturerService {
 
     public void addLecturer(LecturerDTO lecturerDTO) {
         try {
-
             EmailValidator.validate(lecturerDTO.getEmail());
 
             Long count = em.createQuery("SELECT COUNT(l) FROM Lecturer l WHERE l.email = :email", Long.class)
@@ -40,7 +39,6 @@ public class LecturerService {
             if (count > 0) {
                 throw new IllegalArgumentException("Email " + lecturerDTO.getEmail() + " is already in use.");
             }
-
 
             Lecturer lecturer = new Lecturer();
             lecturer.setFirstName(lecturerDTO.getFirstName());
@@ -52,7 +50,10 @@ public class LecturerService {
                 List<Subject> subjects = em.createQuery("SELECT s FROM Subject s WHERE s.id IN :ids", Subject.class)
                         .setParameter("ids", lecturerDTO.getSubjectIds())
                         .getResultList();
-                lecturer.setSubjects(new HashSet<>(subjects));
+                for (Subject subject : subjects) {
+                    subject.setLecturer(lecturer); // Przypisanie wykładowcy do przedmiotu
+                    em.merge(subject); // Aktualizacja przedmiotu z nowym przypisaniem wykładowcy
+                }
             }
 
             createSurveyForLecturer(lecturer);
@@ -61,6 +62,7 @@ public class LecturerService {
             throw e;
         }
     }
+
 
     private void createSurveyForLecturer(Lecturer lecturer) {
         Survey survey = new Survey();

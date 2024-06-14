@@ -36,12 +36,15 @@ public class Lecturer {
     @Column(name = "email", nullable = false)
     private String email;
 
-    @ManyToMany
+ /*   @ManyToMany
     @JoinTable(
             name = "lecturer_subject",
             joinColumns = @JoinColumn(name = "lecturer_id"),
             inverseJoinColumns = @JoinColumn(name = "subject_id")
     )
+    */
+ @OneToMany(mappedBy = "lecturer")
+ @JsonbTransient
     private Set<Subject> subjects;
 
     @JsonbTransient
