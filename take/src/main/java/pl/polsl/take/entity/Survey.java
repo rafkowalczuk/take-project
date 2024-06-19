@@ -30,6 +30,11 @@ public class Survey {
     private Lecturer lecturer;
 
     @JsonbTransient
+    @ManyToOne
+    @JoinColumn(name = "subject_id")
+    private Subject subject;
+
+    @JsonbTransient
     @OneToMany(mappedBy = "survey", cascade = CascadeType.ALL)
     private Set<Question> questions;
 
@@ -72,5 +77,13 @@ public class Survey {
 
     public void setQuestions(Set<Question> questions) {
         this.questions = questions;
+    }
+
+    public Subject getSubject() {
+        return subject;
+    }
+
+    public void setSubject(Subject subject) {
+        this.subject = subject;
     }
 }

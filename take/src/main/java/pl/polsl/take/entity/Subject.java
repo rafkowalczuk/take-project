@@ -26,6 +26,8 @@ public class Subject {
     @JoinColumn(name = "lecturer_id")
     private Lecturer lecturer;
 
+
+
     public Long getSubjectId() {
         return subjectId;
     }

@@ -41,4 +41,15 @@ public class LecturerResource {
         return Response.ok(profile).build();
     }
 
+    @PUT
+    @Path("/{lecturerId}")
+    public Response updateLecturer(@PathParam("lecturerId") Long lecturerId, LecturerDTO lecturerDTO) {
+        try {
+            lecturerService.updateLecturer(lecturerId, lecturerDTO);
+            return Response.ok(lecturerDTO).build();
+        } catch (IllegalArgumentException e) {
+            return Response.status(Response.Status.NOT_FOUND).entity(e.getMessage()).build();
+        }
+    }
+
 }

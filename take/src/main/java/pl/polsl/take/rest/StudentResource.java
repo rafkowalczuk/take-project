@@ -5,6 +5,7 @@ import jakarta.inject.Inject;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import pl.polsl.take.dto.StudentDTO;
 import pl.polsl.take.dto.StudentSurveyDTO;
 import pl.polsl.take.ejb.StudentService;
 import pl.polsl.take.entity.Student;
@@ -26,9 +27,20 @@ public class StudentResource {
     }
 
     @POST
-    public Response addStudent(Student student) {
-        studentService.addStudent(student);
-        return Response.status(Response.Status.CREATED).entity(student).build();
+    public Response addStudent(StudentDTO studentDTO) {
+        studentService.addStudent(studentDTO);
+        return Response.status(Response.Status.CREATED).entity(studentDTO).build();
+    }
+
+    @PUT
+    @Path("/{studentId}")
+    public Response updateStudent(@PathParam("studentId") Long studentId, StudentDTO studentDTO) {
+        try {
+            studentService.updateStudent(studentId, studentDTO);
+            return Response.ok(studentDTO).build();
+        } catch (IllegalArgumentException e) {
+            return Response.status(Response.Status.NOT_FOUND).entity(e.getMessage()).build();
+        }
     }
 
     @GET

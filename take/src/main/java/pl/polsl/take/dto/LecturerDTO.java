@@ -59,5 +59,7 @@ public class LecturerDTO {
     public void setSubjectIds(List<Long> subjectIds) {
         this.subjectIds = subjectIds;
     }
+
+
 }
 

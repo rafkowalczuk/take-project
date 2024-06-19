@@ -14,7 +14,6 @@ import pl.polsl.take.validator.EmailValidator;
 
 import java.util.Arrays;
 import java.util.Date;
-import java.util.HashSet;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -51,23 +50,22 @@ public class LecturerService {
                         .setParameter("ids", lecturerDTO.getSubjectIds())
                         .getResultList();
                 for (Subject subject : subjects) {
-                    subject.setLecturer(lecturer); // Przypisanie wykładowcy do przedmiotu
-                    em.merge(subject); // Aktualizacja przedmiotu z nowym przypisaniem wykładowcy
+                    subject.setLecturer(lecturer);
+                    em.merge(subject);
+                    createSurveyForLecturer(lecturer, subject);
                 }
             }
-
-            createSurveyForLecturer(lecturer);
         } catch (IllegalArgumentException e) {
             System.err.println("Error: " + e.getMessage());
             throw e;
         }
     }
 
-
-    private void createSurveyForLecturer(Lecturer lecturer) {
+    private void createSurveyForLecturer(Lecturer lecturer, Subject subject) {
         Survey survey = new Survey();
         survey.setLecturer(lecturer);
-        survey.setName(lecturer.getFirstName() +" "+ lecturer.getLastName() + " - Survey");
+        survey.setSubject(subject);
+        survey.setName(lecturer.getFirstName() + " " + lecturer.getLastName() + " - Survey for " + subject.getName());
         survey.setDateCreated(new Date());
         em.persist(survey);
 
@@ -110,6 +108,40 @@ public class LecturerService {
                 subjects,
                 surveys
         );
+    }
+    public void updateLecturer(Long lecturerId, LecturerDTO lecturerDTO) {
+        Lecturer lecturer = em.find(Lecturer.class, lecturerId);
+        if (lecturer == null) {
+            throw new IllegalArgumentException("Lecturer not found.");
+        }
+
+        if (lecturerDTO.getFirstName() != null) {
+            lecturer.setFirstName(lecturerDTO.getFirstName());
+        }
+        if (lecturerDTO.getLastName() != null) {
+            lecturer.setLastName(lecturerDTO.getLastName());
+        }
+        if (lecturerDTO.getEmail() != null) {
+            EmailValidator.validate(lecturerDTO.getEmail());
+            lecturer.setEmail(lecturerDTO.getEmail());
+        }
+        em.merge(lecturer);
+
+        if (lecturerDTO.getSubjectIds() != null && !lecturerDTO.getSubjectIds().isEmpty()) {
+            List<Long> newSubjectIds = lecturerDTO.getSubjectIds();
+
+            // Dodaj nowe przedmioty
+            List<Subject> subjectsToAdd = em.createQuery("SELECT s FROM Subject s WHERE s.id IN :ids", Subject.class)
+                    .setParameter("ids", newSubjectIds)
+                    .getResultList();
+            for (Subject subject : subjectsToAdd) {
+                if (!lecturer.getSubjects().contains(subject)) {
+                    subject.setLecturer(lecturer);
+                    em.merge(subject);
+                    createSurveyForLecturer(lecturer, subject);
+                }
+            }
+        }
     }
 
 }
