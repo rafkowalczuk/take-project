@@ -4,6 +4,7 @@ package pl.polsl.take.entity;
 import jakarta.json.bind.annotation.JsonbTransient;
 import jakarta.persistence.*;
 
+import java.util.HashSet;
 import java.util.Set;
 
 @Entity
@@ -16,10 +17,11 @@ public class Lecturer {
         this.lastName = lastName;
         this.email = email;
         this.surveys = surveys;
-        this.subjects = subjects;
+        this.subjects = subjects != null ? subjects : new HashSet<>();
     }
 
     public Lecturer() {
+        this.subjects = new HashSet<>();
     }
 
     @Id
@@ -36,20 +38,18 @@ public class Lecturer {
     @Column(name = "email", nullable = false)
     private String email;
 
- /*   @ManyToMany
-    @JoinTable(
-            name = "lecturer_subject",
-            joinColumns = @JoinColumn(name = "lecturer_id"),
-            inverseJoinColumns = @JoinColumn(name = "subject_id")
-    )
-    */
- @OneToMany(mappedBy = "lecturer")
- @JsonbTransient
-    private Set<Subject> subjects;
-
     @JsonbTransient
     @OneToMany(mappedBy = "lecturer")
     private Set<Survey> surveys;
+
+    @JsonbTransient
+    @ManyToMany
+    @JoinTable(
+            name = "subject_lecturer",
+            joinColumns = @JoinColumn(name = "lecturer_id"),
+            inverseJoinColumns = @JoinColumn(name = "subject_id")
+    )
+    private Set<Subject> subjects;
 
     public Long getLecturerId() {
         return lecturerId;

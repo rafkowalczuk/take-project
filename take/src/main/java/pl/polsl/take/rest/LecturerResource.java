@@ -52,4 +52,16 @@ public class LecturerResource {
         }
     }
 
+    @DELETE
+    @Path("/email/{email}")
+    public Response deleteLecturerByEmail(@PathParam("email") String email) {
+        try {
+            lecturerService.deleteLecturerByEmail(email);
+            return Response.status(Response.Status.NO_CONTENT).build();
+        } catch (IllegalArgumentException e) {
+            return Response.status(Response.Status.NOT_FOUND).entity(e.getMessage()).build();
+        }
+    }
+
+
 }

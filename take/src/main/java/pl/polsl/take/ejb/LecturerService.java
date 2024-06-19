@@ -46,11 +46,12 @@ public class LecturerService {
             em.persist(lecturer);
 
             if (lecturerDTO.getSubjectIds() != null && !lecturerDTO.getSubjectIds().isEmpty()) {
-                List<Subject> subjects = em.createQuery("SELECT s FROM Subject s WHERE s.id IN :ids", Subject.class)
+                List<Subject> subjects = em.createQuery("SELECT s FROM Subject s WHERE s.subjectId IN :ids", Subject.class)
                         .setParameter("ids", lecturerDTO.getSubjectIds())
                         .getResultList();
                 for (Subject subject : subjects) {
-                    subject.setLecturer(lecturer);
+                    lecturer.getSubjects().add(subject);
+                    subject.getLecturers().add(lecturer);
                     em.merge(subject);
                     createSurveyForLecturer(lecturer, subject);
                 }
@@ -58,6 +59,41 @@ public class LecturerService {
         } catch (IllegalArgumentException e) {
             System.err.println("Error: " + e.getMessage());
             throw e;
+        }
+    }
+
+    public void updateLecturer(Long lecturerId, LecturerDTO lecturerDTO) {
+        Lecturer lecturer = em.find(Lecturer.class, lecturerId);
+        if (lecturer == null) {
+            throw new IllegalArgumentException("Lecturer not found.");
+        }
+
+        if (lecturerDTO.getFirstName() != null) {
+            lecturer.setFirstName(lecturerDTO.getFirstName());
+        }
+        if (lecturerDTO.getLastName() != null) {
+            lecturer.setLastName(lecturerDTO.getLastName());
+        }
+        if (lecturerDTO.getEmail() != null) {
+            EmailValidator.validate(lecturerDTO.getEmail());
+            lecturer.setEmail(lecturerDTO.getEmail());
+        }
+        em.merge(lecturer);
+
+        if (lecturerDTO.getSubjectIds() != null && !lecturerDTO.getSubjectIds().isEmpty()) {
+            List<Long> newSubjectIds = lecturerDTO.getSubjectIds();
+
+            List<Subject> subjectsToAdd = em.createQuery("SELECT s FROM Subject s WHERE s.subjectId IN :ids", Subject.class)
+                    .setParameter("ids", newSubjectIds)
+                    .getResultList();
+            for (Subject subject : subjectsToAdd) {
+                if (!lecturer.getSubjects().contains(subject)) {
+                    lecturer.getSubjects().add(subject);
+                    subject.getLecturers().add(lecturer);
+                    em.merge(subject);
+                    createSurveyForLecturer(lecturer, subject);
+                }
+            }
         }
     }
 
@@ -109,39 +145,30 @@ public class LecturerService {
                 surveys
         );
     }
-    public void updateLecturer(Long lecturerId, LecturerDTO lecturerDTO) {
-        Lecturer lecturer = em.find(Lecturer.class, lecturerId);
-        if (lecturer == null) {
-            throw new IllegalArgumentException("Lecturer not found.");
-        }
+    public void deleteLecturerByEmail(String email) {
+        Lecturer lecturer = em.createQuery("SELECT l FROM Lecturer l WHERE l.email = :email", Lecturer.class)
+                .setParameter("email", email)
+                .getSingleResult();
 
-        if (lecturerDTO.getFirstName() != null) {
-            lecturer.setFirstName(lecturerDTO.getFirstName());
-        }
-        if (lecturerDTO.getLastName() != null) {
-            lecturer.setLastName(lecturerDTO.getLastName());
-        }
-        if (lecturerDTO.getEmail() != null) {
-            EmailValidator.validate(lecturerDTO.getEmail());
-            lecturer.setEmail(lecturerDTO.getEmail());
-        }
-        em.merge(lecturer);
-
-        if (lecturerDTO.getSubjectIds() != null && !lecturerDTO.getSubjectIds().isEmpty()) {
-            List<Long> newSubjectIds = lecturerDTO.getSubjectIds();
-
-            // Dodaj nowe przedmioty
-            List<Subject> subjectsToAdd = em.createQuery("SELECT s FROM Subject s WHERE s.id IN :ids", Subject.class)
-                    .setParameter("ids", newSubjectIds)
+        if (lecturer != null) {
+            // Usunięcie ankiet
+            List<Survey> surveys = em.createQuery("SELECT s FROM Survey s WHERE s.lecturer = :lecturer", Survey.class)
+                    .setParameter("lecturer", lecturer)
                     .getResultList();
-            for (Subject subject : subjectsToAdd) {
-                if (!lecturer.getSubjects().contains(subject)) {
-                    subject.setLecturer(lecturer);
-                    em.merge(subject);
-                    createSurveyForLecturer(lecturer, subject);
-                }
+            for (Survey survey : surveys) {
+                em.remove(survey);
             }
+
+            // Usunięcie przypisań do przedmiotów
+            for (Subject subject : lecturer.getSubjects()) {
+                subject.getLecturers().remove(lecturer);
+                em.merge(subject);
+            }
+
+            // Usunięcie wykładowcy
+            em.remove(lecturer);
         }
     }
-
 }
+
+

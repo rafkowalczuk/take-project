@@ -61,5 +61,16 @@ public class StudentResource {
         return Response.ok(student).build();
     }
 
+    @DELETE
+    @Path("/email/{email}")
+    public Response deleteStudentByEmail(@PathParam("email") String email) {
+        try {
+            studentService.deleteStudentByEmail(email);
+            return Response.status(Response.Status.NO_CONTENT).build();
+        } catch (IllegalArgumentException e) {
+            return Response.status(Response.Status.NOT_FOUND).entity(e.getMessage()).build();
+        }
+    }
+
 
 }

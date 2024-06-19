@@ -27,8 +27,20 @@ public class SubjectResource {
     }
 
     @POST
-    public Response addSubject(SubjectDTO subjectDTO) {
+    public Response addSubject(SimpleSubjectDTO subjectDTO) {
         subjectService.addSubject(subjectDTO);
-        return Response.status(Response.Status.CREATED).build();
+        return Response.status(Response.Status.CREATED).entity(subjectDTO).build();
     }
+
+    @DELETE
+    @Path("/name/{name}")
+    public Response deleteSubjectByName(@PathParam("name") String name) {
+        try {
+            subjectService.deleteSubjectByName(name);
+            return Response.status(Response.Status.NO_CONTENT).build();
+        } catch (IllegalArgumentException e) {
+            return Response.status(Response.Status.NOT_FOUND).entity(e.getMessage()).build();
+        }
+    }
+
 }

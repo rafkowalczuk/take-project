@@ -2,17 +2,22 @@ package pl.polsl.take.entity;
 
 import jakarta.persistence.*;
 
+import java.util.HashSet;
+import java.util.Set;
+
 @Entity
 @Table(name = "subject")
 public class Subject {
 
-    public Subject(Long subjectId, String name, Lecturer lecturer) {
+    public Subject(Long subjectId, String name) {
         this.subjectId = subjectId;
         this.name = name;
-        this.lecturer = lecturer;
+        this.lecturers = new HashSet<>();
     }
 
-    public Subject() {}
+    public Subject() {
+        this.lecturers = new HashSet<>();
+    }
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -22,10 +27,8 @@ public class Subject {
     @Column(name = "name", nullable = false)
     private String name;
 
-    @ManyToOne
-    @JoinColumn(name = "lecturer_id")
-    private Lecturer lecturer;
-
+    @ManyToMany(mappedBy = "subjects")
+    private Set<Lecturer> lecturers;
 
 
     public Long getSubjectId() {
@@ -36,13 +39,6 @@ public class Subject {
         this.subjectId = subjectId;
     }
 
-    public Lecturer getLecturer() {
-        return lecturer;
-    }
-
-    public void setLecturer(Lecturer lecturer) {
-        this.lecturer = lecturer;
-    }
 
     public String getName() {
         return name;
@@ -50,6 +46,14 @@ public class Subject {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public Set<Lecturer> getLecturers() {
+        return lecturers;
+    }
+
+    public void setLecturers(Set<Lecturer> lecturers) {
+        this.lecturers = lecturers;
     }
 
     // Getters and Setters

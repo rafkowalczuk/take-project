@@ -6,6 +6,7 @@ import jakarta.persistence.NoResultException;
 import jakarta.persistence.PersistenceContext;
 import pl.polsl.take.dto.StudentDTO;
 import pl.polsl.take.dto.StudentSurveyDTO;
+import pl.polsl.take.entity.Answer;
 import pl.polsl.take.entity.Student;
 import pl.polsl.take.validator.EmailValidator;
 
@@ -81,6 +82,25 @@ public class StudentService {
                     .getSingleResult();
         } catch (NoResultException e) {
             return null;
+        }
+    }
+    public void deleteStudentByEmail(String email) {
+        Student student = em.createQuery("SELECT s FROM Student s WHERE s.email = :email", Student.class)
+                .setParameter("email", email)
+                .getSingleResult();
+
+        if (student != null) {
+            // Usunięcie odpowiedzi (lub innych powiązanych danych)
+            // Assuming you have an Answer entity related to Student
+            List<Answer> answers = em.createQuery("SELECT a FROM Answer a WHERE a.student = :student", Answer.class)
+                    .setParameter("student", student)
+                    .getResultList();
+            for (Answer answer : answers) {
+                em.remove(answer);
+            }
+
+            // Usunięcie studenta
+            em.remove(student);
         }
     }
 

@@ -7,6 +7,8 @@ import pl.polsl.take.dto.SimpleSubjectDTO;
 import pl.polsl.take.dto.SubjectDTO;
 import pl.polsl.take.entity.Lecturer;
 import pl.polsl.take.entity.Subject;
+import pl.polsl.take.entity.Survey;
+
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -25,7 +27,7 @@ public class SubjectService {
 
 
 
-    public void addSubject(SubjectDTO subjectDTO) {
+    public void addSubject(SimpleSubjectDTO subjectDTO) {
         try {
             Long count = em.createQuery("SELECT COUNT(s) FROM Subject s WHERE s.name = :name", Long.class)
                     .setParameter("name", subjectDTO.getName())
@@ -34,21 +36,47 @@ public class SubjectService {
                 throw new IllegalArgumentException("Subject with name " + subjectDTO.getName() + " already exists.");
             }
 
-            Lecturer lecturer = em.find(Lecturer.class, subjectDTO.getLecturerId());
-            if (lecturer == null) {
-                throw new IllegalArgumentException("Lecturer with ID " + subjectDTO.getLecturerId() + " does not exist");
-            }
-
             Subject subject = new Subject();
             subject.setName(subjectDTO.getName());
-            subject.setLecturer(lecturer);
             em.persist(subject);
-
-            lecturer.getSubjects().add(subject);
-            em.merge(lecturer);
         } catch (IllegalArgumentException e) {
             System.err.println("Error: " + e.getMessage());
             throw e;
+        }
+    }
+
+    public void updateSubject(Long subjectId, SimpleSubjectDTO subjectDTO) {
+        Subject subject = em.find(Subject.class, subjectId);
+        if (subject == null) {
+            throw new IllegalArgumentException("Subject with ID " + subjectId + " does not exist");
+        }
+
+        subject.setName(subjectDTO.getName());
+        em.merge(subject);
+    }
+
+    public void deleteSubjectByName(String name) {
+        Subject subject = em.createQuery("SELECT s FROM Subject s WHERE s.name = :name", Subject.class)
+                .setParameter("name", name)
+                .getSingleResult();
+
+        if (subject != null) {
+            // Usunięcie ankiet związanych z przedmiotem
+            List<Survey> surveys = em.createQuery("SELECT s FROM Survey s WHERE s.subject = :subject", Survey.class)
+                    .setParameter("subject", subject)
+                    .getResultList();
+            for (Survey survey : surveys) {
+                em.remove(survey);
+            }
+
+            // Usunięcie przypisań do wykładowców
+            for (Lecturer lecturer : subject.getLecturers()) {
+                lecturer.getSubjects().remove(subject);
+                em.merge(lecturer);
+            }
+
+            // Usunięcie przedmiotu
+            em.remove(subject);
         }
     }
 
