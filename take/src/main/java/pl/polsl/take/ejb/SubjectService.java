@@ -61,7 +61,7 @@ public class SubjectService {
                 .getSingleResult();
 
         if (subject != null) {
-            // Usunięcie ankiet związanych z przedmiotem
+
             List<Survey> surveys = em.createQuery("SELECT s FROM Survey s WHERE s.subject = :subject", Survey.class)
                     .setParameter("subject", subject)
                     .getResultList();
@@ -69,13 +69,13 @@ public class SubjectService {
                 em.remove(survey);
             }
 
-            // Usunięcie przypisań do wykładowców
+
             for (Lecturer lecturer : subject.getLecturers()) {
                 lecturer.getSubjects().remove(subject);
                 em.merge(lecturer);
             }
 
-            // Usunięcie przedmiotu
+
             em.remove(subject);
         }
     }

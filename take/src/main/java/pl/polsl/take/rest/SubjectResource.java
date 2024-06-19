@@ -5,7 +5,6 @@ import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import pl.polsl.take.dto.SimpleSubjectDTO;
-import pl.polsl.take.dto.SubjectDTO;
 import pl.polsl.take.ejb.SubjectService;
 
 
@@ -30,6 +29,17 @@ public class SubjectResource {
     public Response addSubject(SimpleSubjectDTO subjectDTO) {
         subjectService.addSubject(subjectDTO);
         return Response.status(Response.Status.CREATED).entity(subjectDTO).build();
+    }
+
+    @PUT
+    @Path("/{subjectId}")
+    public Response updateSubject(@PathParam("subjectId") Long subjectId, SimpleSubjectDTO subjectDTO) {
+        try {
+            subjectService.updateSubject(subjectId, subjectDTO);
+            return Response.ok(subjectDTO).build();
+        } catch (IllegalArgumentException e) {
+            return Response.status(Response.Status.NOT_FOUND).entity(e.getMessage()).build();
+        }
     }
 
     @DELETE

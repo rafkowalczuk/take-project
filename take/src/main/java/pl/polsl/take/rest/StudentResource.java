@@ -6,7 +6,6 @@ import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import pl.polsl.take.dto.StudentDTO;
-import pl.polsl.take.dto.StudentSurveyDTO;
 import pl.polsl.take.ejb.StudentService;
 import pl.polsl.take.entity.Student;
 
@@ -43,12 +42,12 @@ public class StudentResource {
         }
     }
 
-    @GET
+ /*   @GET
     @Path("/{studentId}/surveys")
     public Response getStudentSurveys(@PathParam("studentId") Long studentId) {
         List<StudentSurveyDTO> surveys = studentService.getStudentSurveys(studentId);
         return Response.ok(surveys).build();
-    }
+    }*/
     @GET
     @Path("/email/{email}")
     public Response getStudentByEmail(@PathParam("email") String email) {
@@ -59,6 +58,17 @@ public class StudentResource {
                     .build();
         }
         return Response.ok(student).build();
+    }
+    @GET
+    @Path("/profile/{studentId}")
+    public Response getStudentProfile(@PathParam("studentId") Long studentId) {
+        StudentDTO studentProfile = studentService.getStudentProfile(studentId);
+        if (studentProfile == null) {
+            return Response.status(Response.Status.NOT_FOUND)
+                    .entity("Student with ID " + studentId + " not found")
+                    .build();
+        }
+        return Response.ok(studentProfile).build();
     }
 
     @DELETE

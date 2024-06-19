@@ -131,7 +131,7 @@ public class LecturerService {
     public LecturerProfileDTO getLecturerProfile(Long lecturerId) {
         Lecturer lecturer = em.find(Lecturer.class, lecturerId);
         if (lecturer == null) {
-            return null;  // Or handle this case as needed
+            return null;
         }
         List<String> subjects = lecturer.getSubjects().stream().map(Subject::getName).collect(Collectors.toList());
         List<String> surveys = lecturer.getSurveys().stream().map(Survey::getName).collect(Collectors.toList());
@@ -151,7 +151,7 @@ public class LecturerService {
                 .getSingleResult();
 
         if (lecturer != null) {
-            // Usunięcie ankiet
+
             List<Survey> surveys = em.createQuery("SELECT s FROM Survey s WHERE s.lecturer = :lecturer", Survey.class)
                     .setParameter("lecturer", lecturer)
                     .getResultList();
@@ -159,13 +159,13 @@ public class LecturerService {
                 em.remove(survey);
             }
 
-            // Usunięcie przypisań do przedmiotów
+
             for (Subject subject : lecturer.getSubjects()) {
                 subject.getLecturers().remove(lecturer);
                 em.merge(subject);
             }
 
-            // Usunięcie wykładowcy
+
             em.remove(lecturer);
         }
     }

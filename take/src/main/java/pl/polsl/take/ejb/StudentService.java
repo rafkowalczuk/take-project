@@ -23,14 +23,14 @@ public class StudentService {
         return em.createQuery("SELECT s FROM Student s", Student.class).getResultList();
     }
 
-    public List<StudentSurveyDTO> getStudentSurveys(Long studentId) {
+/*    public List<StudentSurveyDTO> getStudentSurveys(Long studentId) {
         return em.createQuery(
                         "SELECT new pl.polsl.take.dto.StudentSurveyDTO(a.survey.id, a.survey.name) " +
                                 "FROM Answer a WHERE a.student.id = :studentId GROUP BY a.survey.id, a.survey.name",
                         StudentSurveyDTO.class)
                 .setParameter("studentId", studentId)
                 .getResultList();
-    }
+    }*/
 
     public void addStudent(StudentDTO studentDTO) {
         try {
@@ -90,8 +90,7 @@ public class StudentService {
                 .getSingleResult();
 
         if (student != null) {
-            // Usunięcie odpowiedzi (lub innych powiązanych danych)
-            // Assuming you have an Answer entity related to Student
+
             List<Answer> answers = em.createQuery("SELECT a FROM Answer a WHERE a.student = :student", Answer.class)
                     .setParameter("student", student)
                     .getResultList();
@@ -99,9 +98,35 @@ public class StudentService {
                 em.remove(answer);
             }
 
-            // Usunięcie studenta
+
             em.remove(student);
         }
     }
+
+    public StudentDTO getStudentProfile(Long studentId) {
+
+        Student student = em.find(Student.class, studentId);
+        if (student == null) {
+            return null;
+        }
+
+
+        List<StudentSurveyDTO> surveys = em.createQuery(
+                        "SELECT new pl.polsl.take.dto.StudentSurveyDTO(a.survey.id, a.survey.name) " +
+                                "FROM Answer a WHERE a.student.id = :studentId GROUP BY a.survey.id, a.survey.name",
+                        StudentSurveyDTO.class)
+                .setParameter("studentId", studentId)
+                .getResultList();
+
+        return new StudentDTO(
+                student.getStudentId(),
+                student.getFirstName(),
+                student.getLastName(),
+                student.getEmail(),
+                surveys
+        );
+    }
+
+
 
 }
