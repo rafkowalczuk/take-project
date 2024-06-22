@@ -85,23 +85,28 @@ public class StudentService {
         }
     }
     public void deleteStudentByEmail(String email) {
-        Student student = em.createQuery("SELECT s FROM Student s WHERE s.email = :email", Student.class)
-                .setParameter("email", email)
-                .getSingleResult();
+        try {
+            Student student = em.createQuery("SELECT s FROM Student s WHERE s.email = :email", Student.class)
+                    .setParameter("email", email)
+                    .getSingleResult();
 
-        if (student != null) {
+            if (student != null) {
+                List<Answer> answers = em.createQuery("SELECT a FROM Answer a WHERE a.student = :student", Answer.class)
+                        .setParameter("student", student)
+                        .getResultList();
+                for (Answer answer : answers) {
+                    em.remove(answer);
+                }
 
-            List<Answer> answers = em.createQuery("SELECT a FROM Answer a WHERE a.student = :student", Answer.class)
-                    .setParameter("student", student)
-                    .getResultList();
-            for (Answer answer : answers) {
-                em.remove(answer);
+                em.remove(student);
             }
+        } catch (NoResultException e) {
+            System.out.println("Student with email " + email + " not found.");
 
-
-            em.remove(student);
+            throw new IllegalArgumentException("No student found with the email: " + email);
         }
     }
+
 
     public StudentDTO getStudentProfile(Long studentId) {
 

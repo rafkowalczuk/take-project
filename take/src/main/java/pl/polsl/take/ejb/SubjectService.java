@@ -4,7 +4,7 @@ import jakarta.ejb.Stateless;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import pl.polsl.take.dto.SimpleSubjectDTO;
-import pl.polsl.take.dto.SubjectDTO;
+import pl.polsl.take.dto.SubjectProfileDTO;
 import pl.polsl.take.entity.Lecturer;
 import pl.polsl.take.entity.Subject;
 import pl.polsl.take.entity.Survey;
@@ -78,6 +78,18 @@ public class SubjectService {
 
             em.remove(subject);
         }
+    }
+    public SubjectProfileDTO getSubjectProfile(Long subjectId) {
+        Subject subject = em.find(Subject.class, subjectId);
+        if (subject == null) {
+            throw new IllegalArgumentException("Subject with ID " + subjectId + " does not exist.");
+        }
+
+        List<String> lecturersFullNames = subject.getLecturers().stream()
+                .map(lecturer -> lecturer.getFirstName() + " " + lecturer.getLastName())
+                .collect(Collectors.toList());
+
+        return new SubjectProfileDTO(subject.getSubjectId(), subject.getName(), lecturersFullNames);
     }
 
 
