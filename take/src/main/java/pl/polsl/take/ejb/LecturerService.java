@@ -12,9 +12,7 @@ import pl.polsl.take.entity.Survey;
 import pl.polsl.take.entity.Subject;
 import pl.polsl.take.validator.EmailValidator;
 
-import java.util.Arrays;
-import java.util.Date;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Stateless
@@ -80,22 +78,43 @@ public class LecturerService {
         }
         em.merge(lecturer);
 
-        if (lecturerDTO.getSubjectIds() != null && !lecturerDTO.getSubjectIds().isEmpty()) {
-            List<Long> newSubjectIds = lecturerDTO.getSubjectIds();
+        if (lecturerDTO.getSubjectIds() != null) {
+            Set<Long> newSubjectIds = new HashSet<>(lecturerDTO.getSubjectIds());
 
-            List<Subject> subjectsToAdd = em.createQuery("SELECT s FROM Subject s WHERE s.subjectId IN :ids", Subject.class)
-                    .setParameter("ids", newSubjectIds)
-                    .getResultList();
-            for (Subject subject : subjectsToAdd) {
-                if (!lecturer.getSubjects().contains(subject)) {
-                    lecturer.getSubjects().add(subject);
-                    subject.getLecturers().add(lecturer);
-                    em.merge(subject);
-                    createSurveyForLecturer(lecturer, subject);
+
+            Set<Subject> currentSubjects = lecturer.getSubjects();
+
+
+            for (Subject currentSubject : new HashSet<>(currentSubjects)) {
+                if (!newSubjectIds.contains(currentSubject.getSubjectId())) {
+                    currentSubjects.remove(currentSubject);
+                    currentSubject.getLecturers().remove(lecturer);
+                    em.merge(currentSubject);
                 }
             }
+
+
+            Set<Subject> newSubjects = new HashSet<>(em.createQuery("SELECT s FROM Subject s WHERE s.subjectId IN :ids", Subject.class)
+                    .setParameter("ids", newSubjectIds)
+                    .getResultList());
+
+
+            for (Subject newSubject : newSubjects) {
+                if (!currentSubjects.contains(newSubject)) {
+                    currentSubjects.add(newSubject);
+                    newSubject.getLecturers().add(lecturer);
+                    em.merge(newSubject);
+                    createSurveyForLecturer(lecturer, newSubject);
+                }
+            }
+
+            lecturer.setSubjects(currentSubjects);
+            em.merge(lecturer);
         }
+
+
     }
+
 
     private void createSurveyForLecturer(Lecturer lecturer, Subject subject) {
         Survey survey = new Survey();
