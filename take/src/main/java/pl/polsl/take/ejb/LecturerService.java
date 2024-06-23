@@ -3,6 +3,7 @@ package pl.polsl.take.ejb;
 
 import jakarta.ejb.*;
 import jakarta.persistence.EntityManager;
+import jakarta.persistence.NoResultException;
 import jakarta.persistence.PersistenceContext;
 import pl.polsl.take.dto.LecturerDTO;
 import pl.polsl.take.dto.LecturerProfileDTO;
@@ -11,6 +12,7 @@ import pl.polsl.take.entity.Question;
 import pl.polsl.take.entity.Survey;
 import pl.polsl.take.entity.Subject;
 import pl.polsl.take.exceptions.EmailAlreadyInUseException;
+import pl.polsl.take.exceptions.EmailNotFoundException;
 import pl.polsl.take.validator.EmailValidator;
 
 import java.util.*;

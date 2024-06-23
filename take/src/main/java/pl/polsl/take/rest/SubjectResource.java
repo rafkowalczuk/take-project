@@ -1,5 +1,6 @@
 package pl.polsl.take.rest;
 
+import jakarta.ejb.EJBException;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
@@ -7,6 +8,8 @@ import jakarta.ws.rs.core.Response;
 import pl.polsl.take.dto.SimpleSubjectDTO;
 import pl.polsl.take.dto.SubjectProfileDTO;
 import pl.polsl.take.ejb.SubjectService;
+import pl.polsl.take.exceptions.SubjectAlreadyExistsException;
+import pl.polsl.take.exceptions.SubjectNotFoundException;
 
 
 import java.util.List;
@@ -42,8 +45,21 @@ public class SubjectResource {
 
     @POST
     public Response addSubject(SimpleSubjectDTO subjectDTO) {
-        subjectService.addSubject(subjectDTO);
-        return Response.status(Response.Status.CREATED).entity(subjectDTO).build();
+        try {
+            subjectService.addSubject(subjectDTO);
+            return Response.status(Response.Status.CREATED).entity(subjectDTO).build();
+        } catch (SubjectAlreadyExistsException e) {
+            return Response.status(Response.Status.CONFLICT).entity(e.getMessage()).build();
+        } catch (EJBException ejbEx) {
+            Throwable cause = ejbEx.getCause();
+            if (cause instanceof SubjectAlreadyExistsException) {
+                return Response.status(Response.Status.CONFLICT).entity(cause.getMessage()).build();
+            }
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity("Internal Server Error").build();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity("Internal Server Error").build();
+        }
     }
 
     @PUT
@@ -52,8 +68,19 @@ public class SubjectResource {
         try {
             subjectService.updateSubject(subjectId, subjectDTO);
             return Response.ok(subjectDTO).build();
+        } catch (SubjectAlreadyExistsException e) {
+            return Response.status(Response.Status.CONFLICT).entity(e.getMessage()).build();
         } catch (IllegalArgumentException e) {
             return Response.status(Response.Status.NOT_FOUND).entity(e.getMessage()).build();
+        } catch (EJBException ejbEx) {
+            Throwable cause = ejbEx.getCause();
+            if (cause instanceof SubjectAlreadyExistsException) {
+                return Response.status(Response.Status.CONFLICT).entity(cause.getMessage()).build();
+            }
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity("Internal Server Error").build();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity("Internal Server Error").build();
         }
     }
 
@@ -63,8 +90,17 @@ public class SubjectResource {
         try {
             subjectService.deleteSubjectByName(name);
             return Response.status(Response.Status.NO_CONTENT).build();
-        } catch (IllegalArgumentException e) {
+        } catch (SubjectNotFoundException e) {
             return Response.status(Response.Status.NOT_FOUND).entity(e.getMessage()).build();
+        } catch (EJBException ejbEx) {
+            Throwable cause = ejbEx.getCause();
+            if (cause instanceof SubjectNotFoundException) {
+                return Response.status(Response.Status.NOT_FOUND).entity(cause.getMessage()).build();
+            }
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity("Internal Server Error").build();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity("Internal Server Error").build();
         }
     }
 
