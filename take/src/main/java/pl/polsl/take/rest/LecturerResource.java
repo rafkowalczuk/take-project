@@ -1,5 +1,6 @@
 package pl.polsl.take.rest;
 
+import jakarta.ejb.EJBException;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
@@ -8,6 +9,8 @@ import pl.polsl.take.dto.LecturerDTO;
 import pl.polsl.take.dto.LecturerProfileDTO;
 import pl.polsl.take.ejb.LecturerService;
 import pl.polsl.take.entity.Lecturer;
+import pl.polsl.take.exceptions.EmailAlreadyInUseException;
+import pl.polsl.take.exceptions.EmailNotFoundException;
 
 import java.util.List;
 
@@ -27,8 +30,21 @@ public class LecturerResource {
 
     @POST
     public Response addLecturer(LecturerDTO lecturerDTO) {
-        lecturerService.addLecturer(lecturerDTO);
-        return Response.status(Response.Status.CREATED).entity(lecturerDTO).build();
+        try {
+            lecturerService.addLecturer(lecturerDTO);
+            return Response.status(Response.Status.CREATED).entity(lecturerDTO).build();
+        } catch (EmailAlreadyInUseException e) {
+            return Response.status(Response.Status.CONFLICT).entity(e.getMessage()).build();
+        } catch (EJBException ejbEx) {
+            Throwable cause = ejbEx.getCause();
+            if (cause instanceof EmailAlreadyInUseException) {
+                return Response.status(Response.Status.CONFLICT).entity(cause.getMessage()).build();
+            }
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity("Internal Server Error").build();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity("Internal Server Error").build();
+        }
     }
 
     @GET
@@ -47,8 +63,19 @@ public class LecturerResource {
         try {
             lecturerService.updateLecturer(lecturerId, lecturerDTO);
             return Response.ok(lecturerDTO).build();
+        } catch (EmailAlreadyInUseException e) {
+            return Response.status(Response.Status.CONFLICT).entity(e.getMessage()).build();
         } catch (IllegalArgumentException e) {
             return Response.status(Response.Status.NOT_FOUND).entity(e.getMessage()).build();
+        } catch (EJBException ejbEx) {
+            Throwable cause = ejbEx.getCause();
+            if (cause instanceof EmailAlreadyInUseException) {
+                return Response.status(Response.Status.CONFLICT).entity(cause.getMessage()).build();
+            }
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity("Internal Server Error").build();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity("Internal Server Error").build();
         }
     }
 
@@ -58,10 +85,17 @@ public class LecturerResource {
         try {
             lecturerService.deleteLecturerByEmail(email);
             return Response.status(Response.Status.NO_CONTENT).build();
-        } catch (IllegalArgumentException e) {
+        } catch (EmailNotFoundException e) {
             return Response.status(Response.Status.NOT_FOUND).entity(e.getMessage()).build();
+        } catch (EJBException ejbEx) {
+            Throwable cause = ejbEx.getCause();
+            if (cause instanceof EmailNotFoundException) {
+                return Response.status(Response.Status.NOT_FOUND).entity(cause.getMessage()).build();
+            }
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity("Internal Server Error").build();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity("Internal Server Error").build();
         }
     }
-
-
 }
