@@ -23,14 +23,14 @@ public class StudentService {
         return em.createQuery("SELECT s FROM Student s", Student.class).getResultList();
     }
 
-/*    public List<StudentSurveyDTO> getStudentSurveys(Long studentId) {
+    public List<StudentSurveyDTO> getStudentSurveys(Long studentId) {
         return em.createQuery(
                         "SELECT new pl.polsl.take.dto.StudentSurveyDTO(a.survey.id, a.survey.name) " +
                                 "FROM Answer a WHERE a.student.id = :studentId GROUP BY a.survey.id, a.survey.name",
                         StudentSurveyDTO.class)
                 .setParameter("studentId", studentId)
                 .getResultList();
-    }*/
+    }
 
     public void addStudent(StudentDTO studentDTO) {
         try {

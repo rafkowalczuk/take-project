@@ -8,7 +8,7 @@ import jakarta.ws.rs.core.Response;
 import pl.polsl.take.dto.StudentDTO;
 import pl.polsl.take.ejb.StudentService;
 import pl.polsl.take.entity.Student;
-
+import pl.polsl.take.dto.StudentSurveyDTO;
 import java.util.List;
 
 @Path("/students")
@@ -42,12 +42,12 @@ public class StudentResource {
         }
     }
 
- /*   @GET
-    @Path("/{studentId}/surveys")
+   @GET
+    @Path("/surveys/{studentId}")
     public Response getStudentSurveys(@PathParam("studentId") Long studentId) {
         List<StudentSurveyDTO> surveys = studentService.getStudentSurveys(studentId);
         return Response.ok(surveys).build();
-    }*/
+    }
     @GET
     @Path("/email/{email}")
     public Response getStudentByEmail(@PathParam("email") String email) {
@@ -70,6 +70,7 @@ public class StudentResource {
         }
         return Response.ok(studentProfile).build();
     }
+
 
     @DELETE
     @Path("/email/{email}")
