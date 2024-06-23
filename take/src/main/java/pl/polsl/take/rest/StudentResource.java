@@ -1,6 +1,7 @@
 package pl.polsl.take.rest;
 
 
+import jakarta.ejb.EJBException;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
@@ -9,6 +10,9 @@ import pl.polsl.take.dto.StudentDTO;
 import pl.polsl.take.ejb.StudentService;
 import pl.polsl.take.entity.Student;
 import pl.polsl.take.dto.StudentSurveyDTO;
+import pl.polsl.take.exceptions.EmailAlreadyInUseException;
+import pl.polsl.take.exceptions.EmailNotFoundException;
+
 import java.util.List;
 
 @Path("/students")
@@ -27,8 +31,19 @@ public class StudentResource {
 
     @POST
     public Response addStudent(StudentDTO studentDTO) {
-        studentService.addStudent(studentDTO);
-        return Response.status(Response.Status.CREATED).entity(studentDTO).build();
+        try {
+            studentService.addStudent(studentDTO);
+            return Response.status(Response.Status.CREATED).entity(studentDTO).build();
+        } catch (EmailAlreadyInUseException e) {
+            return Response.status(Response.Status.CONFLICT).entity(e.getMessage()).build();
+        } catch (IllegalArgumentException e) {
+            return Response.status(Response.Status.BAD_REQUEST).entity(e.getMessage()).build();
+        } catch (EJBException e) {
+            if (e.getCause() instanceof EmailAlreadyInUseException) {
+                return Response.status(Response.Status.CONFLICT).entity(e.getCause().getMessage()).build();
+            }
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity("Internal Server Error").build();
+        }
     }
 
     @PUT
@@ -37,8 +52,18 @@ public class StudentResource {
         try {
             studentService.updateStudent(studentId, studentDTO);
             return Response.ok(studentDTO).build();
+        } catch (EmailAlreadyInUseException e) {
+            return Response.status(Response.Status.CONFLICT).entity(e.getMessage()).build();
         } catch (IllegalArgumentException e) {
             return Response.status(Response.Status.NOT_FOUND).entity(e.getMessage()).build();
+        } catch (EJBException e) {
+            if (e.getCause() instanceof EmailAlreadyInUseException) {
+                return Response.status(Response.Status.CONFLICT).entity(e.getCause().getMessage()).build();
+            }
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity("Internal Server Error").build();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity("Internal Server Error").build();
         }
     }
 
@@ -51,13 +76,29 @@ public class StudentResource {
     @GET
     @Path("/email/{email}")
     public Response getStudentByEmail(@PathParam("email") String email) {
-        Student student = studentService.getStudentByEmail(email);
-        if (student == null) {
+        try {
+            Student student = studentService.getStudentByEmail(email);
+            return Response.ok(student).build();
+        } catch (EmailNotFoundException e) {
             return Response.status(Response.Status.NOT_FOUND)
-                    .entity("Student with email " + email + " not found")
+                    .entity(e.getMessage())
+                    .build();
+        } catch (EJBException ejbEx) {
+            Throwable cause = ejbEx.getCause();
+            if (cause instanceof EmailNotFoundException) {
+                return Response.status(Response.Status.NOT_FOUND)
+                        .entity(cause.getMessage())
+                        .build();
+            }
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                    .entity("Internal Server Error")
+                    .build();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                    .entity("Internal Server Error")
                     .build();
         }
-        return Response.ok(student).build();
     }
     @GET
     @Path("/profile/{studentId}")
@@ -78,8 +119,17 @@ public class StudentResource {
         try {
             studentService.deleteStudentByEmail(email);
             return Response.status(Response.Status.NO_CONTENT).build();
-        } catch (IllegalArgumentException e) {
+        } catch (EmailNotFoundException e) {
             return Response.status(Response.Status.NOT_FOUND).entity(e.getMessage()).build();
+        } catch (EJBException ejbEx) {
+            Throwable cause = ejbEx.getCause();
+            if (cause instanceof EmailNotFoundException) {
+                return Response.status(Response.Status.NOT_FOUND).entity(cause.getMessage()).build();
+            }
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity("Internal Server Error").build();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity("Internal Server Error").build();
         }
     }
 

@@ -1,5 +1,6 @@
 package pl.polsl.take.ejb;
 
+import jakarta.ejb.EJBException;
 import jakarta.ejb.Stateless;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.NoResultException;
@@ -8,6 +9,8 @@ import pl.polsl.take.dto.StudentDTO;
 import pl.polsl.take.dto.StudentSurveyDTO;
 import pl.polsl.take.entity.Answer;
 import pl.polsl.take.entity.Student;
+import pl.polsl.take.exceptions.EmailAlreadyInUseException;
+import pl.polsl.take.exceptions.EmailNotFoundException;
 import pl.polsl.take.validator.EmailValidator;
 
 import java.util.List;
@@ -40,7 +43,7 @@ public class StudentService {
                     .setParameter("email", studentDTO.getEmail())
                     .getSingleResult();
             if (count > 0) {
-                throw new IllegalArgumentException("Email " + studentDTO.getEmail() + " is already in use.");
+                throw new EmailAlreadyInUseException("Email " + studentDTO.getEmail() + " is already in use.");
             }
 
             Student student = new Student();
@@ -49,9 +52,8 @@ public class StudentService {
             student.setEmail(studentDTO.getEmail());
 
             em.persist(student);
-        } catch (IllegalArgumentException e) {
-            System.err.println("Error: " + e.getMessage());
-            throw e;
+        } catch (Exception e) {
+            throw new EJBException(e);
         }
     }
 
@@ -61,16 +63,26 @@ public class StudentService {
             throw new IllegalArgumentException("Student not found.");
         }
 
+        if (studentDTO.getEmail() != null) {
+            EmailValidator.validate(studentDTO.getEmail());
+
+            Long count = em.createQuery("SELECT COUNT(s) FROM Student s WHERE s.email = :email AND s.id != :id", Long.class)
+                    .setParameter("email", studentDTO.getEmail())
+                    .setParameter("id", studentId)
+                    .getSingleResult();
+            if (count > 0) {
+                throw new EmailAlreadyInUseException("Email " + studentDTO.getEmail() + " is already in use.");
+            }
+
+            student.setEmail(studentDTO.getEmail());
+        }
         if (studentDTO.getFirstName() != null) {
             student.setFirstName(studentDTO.getFirstName());
         }
         if (studentDTO.getLastName() != null) {
             student.setLastName(studentDTO.getLastName());
         }
-        if (studentDTO.getEmail() != null) {
-            EmailValidator.validate(studentDTO.getEmail());
-            student.setEmail(studentDTO.getEmail());
-        }
+
         em.merge(student);
     }
 
@@ -81,7 +93,7 @@ public class StudentService {
                     .setParameter("email", email)
                     .getSingleResult();
         } catch (NoResultException e) {
-            return null;
+            throw new EmailNotFoundException("Student with email " + email + " not found");
         }
     }
     public void deleteStudentByEmail(String email) {
@@ -101,9 +113,7 @@ public class StudentService {
                 em.remove(student);
             }
         } catch (NoResultException e) {
-            System.out.println("Student with email " + email + " not found.");
-
-            throw new IllegalArgumentException("No student found with the email: " + email);
+            throw new EmailNotFoundException("No student found with the email: " + email);
         }
     }
 
