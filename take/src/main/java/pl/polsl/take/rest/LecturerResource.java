@@ -98,4 +98,6 @@ public class LecturerResource {
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity("Internal Server Error").build();
         }
     }
+
+
 }

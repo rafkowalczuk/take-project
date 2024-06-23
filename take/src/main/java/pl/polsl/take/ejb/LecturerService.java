@@ -7,10 +7,7 @@ import jakarta.persistence.NoResultException;
 import jakarta.persistence.PersistenceContext;
 import pl.polsl.take.dto.LecturerDTO;
 import pl.polsl.take.dto.LecturerProfileDTO;
-import pl.polsl.take.entity.Lecturer;
-import pl.polsl.take.entity.Question;
-import pl.polsl.take.entity.Survey;
-import pl.polsl.take.entity.Subject;
+import pl.polsl.take.entity.*;
 import pl.polsl.take.exceptions.EmailAlreadyInUseException;
 import pl.polsl.take.exceptions.EmailNotFoundException;
 import pl.polsl.take.validator.EmailValidator;
@@ -182,6 +179,15 @@ public class LecturerService {
                     .getSingleResult();
 
             if (lecturer != null) {
+
+                List<Answer> answers = em.createQuery("SELECT a FROM Answer a WHERE a.survey.lecturer = :lecturer", Answer.class)
+                        .setParameter("lecturer", lecturer)
+                        .getResultList();
+                for (Answer answer : answers) {
+                    em.remove(answer);
+                }
+
+
                 List<Survey> surveys = em.createQuery("SELECT s FROM Survey s WHERE s.lecturer = :lecturer", Survey.class)
                         .setParameter("lecturer", lecturer)
                         .getResultList();
@@ -189,10 +195,12 @@ public class LecturerService {
                     em.remove(survey);
                 }
 
+
                 for (Subject subject : lecturer.getSubjects()) {
                     subject.getLecturers().remove(lecturer);
                     em.merge(subject);
                 }
+
 
                 em.remove(lecturer);
             }
