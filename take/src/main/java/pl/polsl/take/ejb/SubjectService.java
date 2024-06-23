@@ -5,6 +5,7 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import pl.polsl.take.dto.SimpleSubjectDTO;
 import pl.polsl.take.dto.SubjectProfileDTO;
+import pl.polsl.take.entity.Answer;
 import pl.polsl.take.entity.Lecturer;
 import pl.polsl.take.entity.Subject;
 import pl.polsl.take.entity.Survey;
@@ -62,6 +63,14 @@ public class SubjectService {
 
         if (subject != null) {
 
+            List<Answer> answers = em.createQuery("SELECT a FROM Answer a WHERE a.survey.subject = :subject", Answer.class)
+                    .setParameter("subject", subject)
+                    .getResultList();
+            for (Answer answer : answers) {
+                em.remove(answer);
+            }
+
+
             List<Survey> surveys = em.createQuery("SELECT s FROM Survey s WHERE s.subject = :subject", Survey.class)
                     .setParameter("subject", subject)
                     .getResultList();
@@ -75,10 +84,11 @@ public class SubjectService {
                 em.merge(lecturer);
             }
 
-
+       
             em.remove(subject);
         }
     }
+
     public SubjectProfileDTO getSubjectProfile(Long subjectId) {
         Subject subject = em.find(Subject.class, subjectId);
         if (subject == null) {
