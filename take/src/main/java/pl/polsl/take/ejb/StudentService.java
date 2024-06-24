@@ -52,38 +52,46 @@ public class StudentService {
             student.setEmail(studentDTO.getEmail());
 
             em.persist(student);
+        } catch (EmailAlreadyInUseException | IllegalArgumentException e) {
+            throw e; // Rzucenie wyjątku bez opakowania
         } catch (Exception e) {
-            throw new EJBException(e);
+            throw new EJBException(e); // Opakowanie innych nieoczekiwanych wyjątków
         }
     }
 
     public void updateStudent(Long studentId, StudentDTO studentDTO) {
-        Student student = em.find(Student.class, studentId);
-        if (student == null) {
-            throw new IllegalArgumentException("Student not found.");
-        }
-
-        if (studentDTO.getEmail() != null) {
-            EmailValidator.validate(studentDTO.getEmail());
-
-            Long count = em.createQuery("SELECT COUNT(s) FROM Student s WHERE s.email = :email AND s.id != :id", Long.class)
-                    .setParameter("email", studentDTO.getEmail())
-                    .setParameter("id", studentId)
-                    .getSingleResult();
-            if (count > 0) {
-                throw new EmailAlreadyInUseException("Email " + studentDTO.getEmail() + " is already in use.");
+        try {
+            Student student = em.find(Student.class, studentId);
+            if (student == null) {
+                throw new IllegalArgumentException("Student not found.");
             }
 
-            student.setEmail(studentDTO.getEmail());
-        }
-        if (studentDTO.getFirstName() != null) {
-            student.setFirstName(studentDTO.getFirstName());
-        }
-        if (studentDTO.getLastName() != null) {
-            student.setLastName(studentDTO.getLastName());
-        }
+            if (studentDTO.getEmail() != null) {
+                EmailValidator.validate(studentDTO.getEmail());
 
-        em.merge(student);
+                Long count = em.createQuery("SELECT COUNT(s) FROM Student s WHERE s.email = :email AND s.id != :id", Long.class)
+                        .setParameter("email", studentDTO.getEmail())
+                        .setParameter("id", studentId)
+                        .getSingleResult();
+                if (count > 0) {
+                    throw new EmailAlreadyInUseException("Email " + studentDTO.getEmail() + " is already in use.");
+                }
+
+                student.setEmail(studentDTO.getEmail());
+            }
+            if (studentDTO.getFirstName() != null) {
+                student.setFirstName(studentDTO.getFirstName());
+            }
+            if (studentDTO.getLastName() != null) {
+                student.setLastName(studentDTO.getLastName());
+            }
+
+            em.merge(student);
+        } catch (EmailAlreadyInUseException | IllegalArgumentException e) {
+            throw e; // Rzucenie wyjątku bez opakowania
+        } catch (Exception e) {
+            throw new EJBException(e); // Opakowanie innych nieoczekiwanych wyjątków
+        }
     }
 
 
@@ -94,6 +102,8 @@ public class StudentService {
                     .getSingleResult();
         } catch (NoResultException e) {
             throw new EmailNotFoundException("Student with email " + email + " not found");
+        } catch (Exception e) {
+            throw new EJBException(e); // Opakowanie innych nieoczekiwanych wyjątków
         }
     }
     public void deleteStudentByEmail(String email) {
@@ -114,6 +124,8 @@ public class StudentService {
             }
         } catch (NoResultException e) {
             throw new EmailNotFoundException("No student found with the email: " + email);
+        } catch (Exception e) {
+            throw new EJBException(e); // Opakowanie innych nieoczekiwanych wyjątków
         }
     }
 
